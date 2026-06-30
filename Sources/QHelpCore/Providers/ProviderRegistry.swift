@@ -1,16 +1,12 @@
 import Foundation
 
-/// Registry for resolving model aliases to AI provider instances.
+/// Registry for resolving model names to AI provider instances.
 public enum ProviderRegistry {
 
     // MARK: - Public Interface
 
-    public static var availableModels: [String] {
-        ProviderCatalog.allModelAliases
-    }
-
-    public static func resolve(modelAlias: String) -> AIProvider? {
-        guard let kind = ProviderCatalog.kind(for: modelAlias) else {
+    public static func resolve(modelName: String) -> AIProvider? {
+        guard let kind = ProviderCatalog.kind(for: modelName) else {
             return nil
         }
 
@@ -21,7 +17,7 @@ public enum ProviderRegistry {
             exit(1)
         }
 
-        let modelIdentifier = ProviderCatalog.modelIdentifier(for: modelAlias, kind: kind)
+        let modelIdentifier = ProviderCatalog.modelIdentifier(for: modelName)
         let supportsImages = ProviderCatalog.supportsImages(
             modelIdentifier: modelIdentifier,
             kind: kind
@@ -31,7 +27,7 @@ public enum ProviderRegistry {
         case .anthropic:
             return AnthropicProvider(
                 modelIdentifier: modelIdentifier,
-                displayName: modelAlias,
+                displayName: modelName,
                 apiKey: apiKey
             )
 
@@ -39,7 +35,7 @@ public enum ProviderRegistry {
             return OpenAICompatibleProvider(
                 kind: kind,
                 modelIdentifier: modelIdentifier,
-                displayName: modelAlias,
+                displayName: modelName,
                 apiKey: apiKey,
                 supportsImages: supportsImages
             )
@@ -47,7 +43,7 @@ public enum ProviderRegistry {
         case .gemini:
             return GeminiProvider(
                 modelIdentifier: modelIdentifier,
-                displayName: modelAlias,
+                displayName: modelName,
                 apiKey: apiKey,
                 supportsImages: supportsImages
             )
@@ -56,10 +52,10 @@ public enum ProviderRegistry {
 
     // MARK: - Testing Helpers
 
-    public static func makeAnthropicProvider(modelAlias: String, apiKey: String) -> AIProvider {
+    public static func makeAnthropicProvider(modelName: String, apiKey: String) -> AIProvider {
         AnthropicProvider(
-            modelIdentifier: ProviderCatalog.modelIdentifier(for: modelAlias, kind: .anthropic),
-            displayName: modelAlias,
+            modelIdentifier: ProviderCatalog.modelIdentifier(for: modelName),
+            displayName: modelName,
             apiKey: apiKey
         )
     }
@@ -68,11 +64,7 @@ public enum ProviderRegistry {
         APIKeyStore.resolveKey(for: .anthropic, promptIfMissing: promptIfMissing)
     }
 
-    public static func anthropicModelIdentifier(for alias: String) -> String {
-        ProviderCatalog.modelIdentifier(for: alias, kind: .anthropic)
-    }
-
-    public static func providerKind(for modelAlias: String) -> ProviderKind? {
-        ProviderCatalog.kind(for: modelAlias)
+    public static func providerKind(for modelName: String) -> ProviderKind? {
+        ProviderCatalog.kind(for: modelName)
     }
 }
