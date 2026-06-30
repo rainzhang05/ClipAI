@@ -12,7 +12,11 @@ let package = Package(
     targets: [
         .target(
             name: "QHelpCore",
-            path: "Sources/QHelpCore"
+            path: "Sources/QHelpCore",
+            swiftSettings: [
+                .unsafeFlags(["-enable-testing"], .when(configuration: .debug)),
+                .unsafeFlags(["-enable-testing"], .when(configuration: .release))
+            ]
         ),
         .executableTarget(
             name: "qhelp",
