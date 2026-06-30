@@ -6,10 +6,6 @@ enum ProviderRegistryTests: TestCase {
 
     static func run() throws {
         try assertEqual(
-            ProviderRegistry.anthropicModelIdentifier(for: "claude-sonnet-4-6"),
-            "claude-sonnet-4-6"
-        )
-        try assertEqual(
             ProviderRegistry.providerKind(for: "gpt-4o"),
             .openai
         )
@@ -19,7 +15,7 @@ enum ProviderRegistryTests: TestCase {
         )
 
         let provider = ProviderRegistry.makeAnthropicProvider(
-            modelAlias: "claude-sonnet-4-6",
+            modelName: "claude-sonnet-4-6",
             apiKey: "test-key"
         )
         try assertEqual(provider.modelIdentifier, "claude-sonnet-4-6")
