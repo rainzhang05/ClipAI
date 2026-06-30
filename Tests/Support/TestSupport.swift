@@ -42,6 +42,9 @@ enum TestSuites {
         AnthropicAPITests.self,
         OpenAICompatibleAPITests.self,
         GeminiAPITests.self,
+        ModelCapabilityParserTests.self,
+        ModelOptionsPromptTests.self,
+        RequestOptionsAPITests.self,
         OverlayInteractionTests.self,
         MarkdownRenderingTests.self,
         RequestQueueTests.self
