@@ -13,16 +13,24 @@ public final class AnthropicProvider: AIProvider {
     public let modelIdentifier: String
 
     private let apiKey: String
+    private let requestOptions: ModelRequestOptions
     private let apiURL = URL(string: "https://api.anthropic.com/v1/messages")!
     private let session: URLSession
     private let timeoutInterval: TimeInterval = 120
 
     // MARK: - Initialization
 
-    public init(modelIdentifier: String, displayName: String, apiKey: String, session: URLSession? = nil) {
+    public init(
+        modelIdentifier: String,
+        displayName: String,
+        apiKey: String,
+        requestOptions: ModelRequestOptions = .none,
+        session: URLSession? = nil
+    ) {
         self.modelIdentifier = modelIdentifier
         self.displayName = displayName
         self.apiKey = apiKey
+        self.requestOptions = requestOptions
 
         if let session {
             self.session = session
@@ -44,7 +52,11 @@ public final class AnthropicProvider: AIProvider {
         request.setValue(AnthropicAPI.apiVersion, forHTTPHeaderField: "anthropic-version")
         request.timeoutInterval = timeoutInterval
 
-        let body = AnthropicAPI.buildRequestBody(modelIdentifier: modelIdentifier, content: content)
+        let body = AnthropicAPI.buildRequestBody(
+            modelIdentifier: modelIdentifier,
+            content: content,
+            options: requestOptions
+        )
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         return try await performRequest(request)

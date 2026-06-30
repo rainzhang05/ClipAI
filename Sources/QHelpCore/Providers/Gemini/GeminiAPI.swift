@@ -6,7 +6,8 @@ public enum GeminiAPI {
 
     public static func buildRequestBody(
         content: ClipboardContent,
-        supportsImages: Bool
+        supportsImages: Bool,
+        options: ModelRequestOptions = .none
     ) throws -> [String: Any] {
         var parts: [[String: Any]] = []
 
@@ -28,7 +29,7 @@ public enum GeminiAPI {
             parts.append(["text": imagePrompt])
         }
 
-        return [
+        var body: [String: Any] = [
             "contents": [
                 [
                     "role": "user",
@@ -36,6 +37,31 @@ public enum GeminiAPI {
                 ] as [String: Any]
             ]
         ]
+
+        applyOptions(options, to: &body)
+        return body
+    }
+
+    static func applyOptions(_ options: ModelRequestOptions, to body: inout [String: Any]) {
+        var generationConfig: [String: Any] = [:]
+
+        if let temperature = options.temperature {
+            generationConfig["temperature"] = temperature
+        }
+
+        if let topP = options.topP {
+            generationConfig["topP"] = topP
+        }
+
+        if options.thinkingEnabled == true {
+            generationConfig["thinkingConfig"] = ["thinkingBudget": 8192]
+        } else if options.thinkingEnabled == false {
+            generationConfig["thinkingConfig"] = ["thinkingBudget": 0]
+        }
+
+        if !generationConfig.isEmpty {
+            body["generationConfig"] = generationConfig
+        }
     }
 
     public static func parseResponse(data: Data) throws -> String {

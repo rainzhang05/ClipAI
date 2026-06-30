@@ -8,7 +8,8 @@ public enum OpenAICompatibleAPI {
     public static func buildRequestBody(
         modelIdentifier: String,
         content: ClipboardContent,
-        supportsImages: Bool
+        supportsImages: Bool,
+        options: ModelRequestOptions = .none
     ) throws -> [String: Any] {
         let messageContent: Any
 
@@ -36,7 +37,7 @@ public enum OpenAICompatibleAPI {
             ]
         }
 
-        return [
+        var body: [String: Any] = [
             "model": modelIdentifier,
             "max_tokens": maxTokens,
             "messages": [
@@ -46,6 +47,27 @@ public enum OpenAICompatibleAPI {
                 ] as [String: Any]
             ]
         ]
+
+        applyOptions(options, to: &body)
+        return body
+    }
+
+    static func applyOptions(_ options: ModelRequestOptions, to body: inout [String: Any]) {
+        if let effort = options.reasoningEffort {
+            body["reasoning_effort"] = effort
+        }
+
+        if let temperature = options.temperature {
+            body["temperature"] = temperature
+        }
+
+        if let topP = options.topP {
+            body["top_p"] = topP
+        }
+
+        if let verbosity = options.verbosity {
+            body["verbosity"] = verbosity
+        }
     }
 
     public static func parseResponse(data: Data) throws -> String {

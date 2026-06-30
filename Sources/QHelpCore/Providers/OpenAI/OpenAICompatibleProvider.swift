@@ -11,6 +11,7 @@ public final class OpenAICompatibleProvider: AIProvider {
     private let apiKey: String
     private let apiURL: URL
     private let supportsImages: Bool
+    private let requestOptions: ModelRequestOptions
     private let session: URLSession
 
     public init(
@@ -19,6 +20,7 @@ public final class OpenAICompatibleProvider: AIProvider {
         displayName: String,
         apiKey: String,
         supportsImages: Bool,
+        requestOptions: ModelRequestOptions = .none,
         session: URLSession? = nil
     ) {
         self.kind = kind
@@ -27,6 +29,7 @@ public final class OpenAICompatibleProvider: AIProvider {
         self.modelIdentifier = modelIdentifier
         self.apiKey = apiKey
         self.supportsImages = supportsImages
+        self.requestOptions = requestOptions
         self.apiURL = ProviderCatalog.chatCompletionsURL(for: kind)!
         self.session = session ?? ProviderHTTP.makeSession()
     }
@@ -35,7 +38,8 @@ public final class OpenAICompatibleProvider: AIProvider {
         let body = try OpenAICompatibleAPI.buildRequestBody(
             modelIdentifier: modelIdentifier,
             content: content,
-            supportsImages: supportsImages
+            supportsImages: supportsImages,
+            options: requestOptions
         )
 
         var request = URLRequest(url: apiURL)

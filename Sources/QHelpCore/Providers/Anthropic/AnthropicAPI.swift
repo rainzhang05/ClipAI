@@ -7,8 +7,13 @@ public enum AnthropicAPI {
     public static let maxTokens = 4096
     public static let imagePrompt = "Describe this clipboard content."
     public static let maxRateLimitRetries = 2
+    public static let defaultThinkingBudgetTokens = 4096
 
-    public static func buildRequestBody(modelIdentifier: String, content: ClipboardContent) -> [String: Any] {
+    public static func buildRequestBody(
+        modelIdentifier: String,
+        content: ClipboardContent,
+        options: ModelRequestOptions = .none
+    ) -> [String: Any] {
         let messageContent: Any
 
         switch content {
@@ -32,7 +37,7 @@ public enum AnthropicAPI {
             ]
         }
 
-        return [
+        var body: [String: Any] = [
             "model": modelIdentifier,
             "max_tokens": maxTokens,
             "messages": [
@@ -42,6 +47,34 @@ public enum AnthropicAPI {
                 ] as [String: Any]
             ]
         ]
+
+        applyOptions(options, to: &body)
+        return body
+    }
+
+    static func applyOptions(_ options: ModelRequestOptions, to body: inout [String: Any]) {
+        if options.thinkingEnabled == true, let type = options.thinkingType {
+            if type == "enabled" {
+                body["thinking"] = [
+                    "type": "enabled",
+                    "budget_tokens": defaultThinkingBudgetTokens
+                ] as [String: Any]
+            } else {
+                body["thinking"] = ["type": type]
+            }
+        }
+
+        if let effort = options.reasoningEffort {
+            body["output_config"] = ["effort": effort]
+        }
+
+        if let temperature = options.temperature {
+            body["temperature"] = temperature
+        }
+
+        if let topP = options.topP {
+            body["top_p"] = topP
+        }
     }
 
     public static func parseResponse(data: Data) throws -> String {

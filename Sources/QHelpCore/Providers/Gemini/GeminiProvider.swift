@@ -8,6 +8,7 @@ public final class GeminiProvider: AIProvider {
 
     private let apiKey: String
     private let supportsImages: Bool
+    private let requestOptions: ModelRequestOptions
     private let session: URLSession
 
     public init(
@@ -15,12 +16,14 @@ public final class GeminiProvider: AIProvider {
         displayName: String,
         apiKey: String,
         supportsImages: Bool,
+        requestOptions: ModelRequestOptions = .none,
         session: URLSession? = nil
     ) {
         self.displayName = displayName
         self.modelIdentifier = modelIdentifier
         self.apiKey = apiKey
         self.supportsImages = supportsImages
+        self.requestOptions = requestOptions
         self.session = session ?? ProviderHTTP.makeSession()
     }
 
@@ -32,7 +35,11 @@ public final class GeminiProvider: AIProvider {
             throw ProviderError.invalidResponse
         }
 
-        let body = try GeminiAPI.buildRequestBody(content: content, supportsImages: supportsImages)
+        let body = try GeminiAPI.buildRequestBody(
+            content: content,
+            supportsImages: supportsImages,
+            options: requestOptions
+        )
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
