@@ -25,10 +25,10 @@ qhelp/
 ## Runtime architecture
 
 ```
-CLI (model alias)
-    → ProviderRegistry.resolve(modelAlias:)
-        → APIKeyStore (env var or Keychain)
-        → AnthropicProvider | OpenAICompatibleProvider | GeminiProvider
+CLI (exact model name)
+    → ProviderRegistry.resolve(modelName:)
+        → ProviderCatalog.kind(for:) — prefix routing only
+        → model name sent verbatim to API
 ClipboardMonitor (NSPasteboard polling)
     → RequestQueue (Swift actor, max 20 items, one in flight)
         → AIProvider.send(content:)
@@ -45,6 +45,8 @@ ClipboardMonitor (NSPasteboard polling)
 
 ## Provider routing
 
+qhelp does not maintain a model catalog. The user passes an exact API model name; routing uses prefix only:
+
 | Prefix / pattern | Provider | Client |
 |------------------|----------|--------|
 | `claude-*` | Anthropic | `AnthropicProvider` (Messages API) |
@@ -56,7 +58,7 @@ ClipboardMonitor (NSPasteboard polling)
 | `qwen-*` | Qwen | `OpenAICompatibleProvider` |
 | `glm-*` | GLM | `OpenAICompatibleProvider` |
 
-Model alias tables and base URLs live in `ProviderCatalog.swift`. Unknown aliases within a family pass through to the API verbatim.
+Base URLs and env vars live in `ProviderCatalog.swift`. Unknown models at the API surface fail with a provider error, not a qhelp validation error.
 
 ## Important files
 
@@ -64,7 +66,7 @@ Model alias tables and base URLs live in `ProviderCatalog.swift`. Unknown aliase
 |------|------|
 | `QHelpApplication.swift` | Wires CLI, monitor, queue, overlay; handles SIGINT/SIGTERM |
 | `ProviderRegistry.swift` | Resolves model alias → provider instance |
-| `ProviderCatalog.swift` | Routing rules, model maps, URLs, image capability flags |
+| `ProviderCatalog.swift` | Prefix routing, API URLs, image capability heuristics |
 | `RequestQueue.swift` | Serial async processing; calls overlay on MainActor |
 | `OverlayManager.swift` | NSPanel lifecycle, transparent NSHostingView |
 | `OverlayView.swift` | Header, dismiss, Copy all, markdown vs plain error content |
