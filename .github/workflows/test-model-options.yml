@@ -1,0 +1,35 @@
+name: Test Model Options
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-model-capability-parser:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build -c release
+      - name: Run ModelCapabilityParserTests
+        run: swift run -c release qhelpTests ModelCapabilityParserTests
+
+  test-model-options-prompt:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build -c release
+      - name: Run ModelOptionsPromptTests
+        run: swift run -c release qhelpTests ModelOptionsPromptTests
+
+  test-request-options-api:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build -c release
+      - name: Run RequestOptionsAPITests
+        run: swift run -c release qhelpTests RequestOptionsAPITests
