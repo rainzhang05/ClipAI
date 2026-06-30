@@ -1,0 +1,26 @@
+name: Test Provider Routing
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-provider-catalog:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build -c release
+      - name: Run ProviderCatalogTests
+        run: swift run -c release qhelpTests ProviderCatalogTests
+
+  test-provider-registry:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build -c release
+      - name: Run ProviderRegistryTests
+        run: swift run -c release qhelpTests ProviderRegistryTests
