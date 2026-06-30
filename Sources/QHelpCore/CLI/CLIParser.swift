@@ -2,7 +2,7 @@ import Foundation
 
 /// Parsed command-line configuration.
 public struct CLIConfig: Equatable {
-    public let modelAlias: String
+    public let modelName: String
 }
 
 public enum CLIParseResult: Equatable {
@@ -27,11 +27,11 @@ public enum CLIParser {
             return .version
         }
 
-        guard let modelAlias = args.first, !modelAlias.hasPrefix("-") else {
+        guard let modelName = args.first, !modelName.hasPrefix("-") else {
             return .invalidUsage
         }
 
-        return .config(CLIConfig(modelAlias: modelAlias))
+        return .config(CLIConfig(modelName: modelName))
     }
 
     public static func parse(_ arguments: [String]) -> CLIConfig {
@@ -62,37 +62,16 @@ public enum CLIParser {
           (text or image), sends it to the specified AI model and displays
           the response in a floating overlay.
 
+          Pass the exact model name from your provider's API documentation.
+          qhelp routes by name prefix and sends the model string verbatim.
+          Invalid or unavailable models return an API error from the provider.
+
         OVERLAY:
           Stays visible until you click the header to dismiss.
           Scroll and copy response text without changing your active app.
 
-        MODELS (Anthropic):
-          claude-sonnet-4-6, claude-opus-4-1, claude-sonnet-4
-          claude-haiku-4-5, claude-haiku-3-5
-
-        MODELS (OpenAI):
-          gpt-4o, gpt-4.1, gpt-4.1-mini, o3-mini, o4-mini
-
-        MODELS (Gemini):
-          gemini-2.5-flash, gemini-2.5-pro, gemini-2.0-flash
-
-        MODELS (Grok):
-          grok-3, grok-3-mini, grok-2-vision-1212
-
-        MODELS (Kimi):
-          kimi-k2, kimi-k2-turbo, moonshot-v1-128k, moonshot-v1-32k
-
-        MODELS (DeepSeek):
-          deepseek-chat, deepseek-reasoner
-
-        MODELS (Qwen):
-          qwen-plus, qwen-max, qwen-turbo, qwen-vl-plus
-
-        MODELS (GLM):
-          glm-4-plus, glm-4-flash, glm-4v-plus
-
-        Unknown aliases within a provider family are passed through to the API.
-
+        PROVIDER ROUTING (model name prefix):
+        \(ProviderCatalog.routingHelp)
         API KEYS:
           Keys are saved in the macOS Keychain on first use per provider.
           Environment variables override Keychain when set:
