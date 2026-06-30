@@ -46,3 +46,14 @@ Environment variables override Keychain when set:
 | GLM | `ZHIPU_API_KEY` |
 
 Optional: `QWEN_BASE_URL` to override the default international DashScope endpoint.
+
+## Overlay Behavior
+
+- Appears bottom-right above the Dock
+- Fades in and **stays visible** until dismissed
+- **Click the header** ("Click to dismiss") to fade out
+- **Scroll and copy** response text in the content area
+- **Copy all** button copies the full raw response (including markdown)
+- Responses render as **rich markdown** (headings, lists, code blocks, links)
+- Drag-select works within each block; use Copy all for the entire response
+- Does **not** activate qhelp or steal focus from your current app
