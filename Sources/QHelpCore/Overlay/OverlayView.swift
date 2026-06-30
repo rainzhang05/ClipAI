@@ -94,10 +94,7 @@ struct OverlayView: View {
 private struct LiquidGlassCard: ViewModifier {
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            GlassEffectContainer {
-                content
-            }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            content.modifier(LiquidGlassCardOS26())
         } else {
             content
                 .background(
@@ -105,5 +102,15 @@ private struct LiquidGlassCard: ViewModifier {
                     in: RoundedRectangle(cornerRadius: 20, style: .continuous)
                 )
         }
+    }
+}
+
+@available(macOS 26.0, *)
+private struct LiquidGlassCardOS26: ViewModifier {
+    func body(content: Content) -> some View {
+        GlassEffectContainer {
+            content
+        }
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }
