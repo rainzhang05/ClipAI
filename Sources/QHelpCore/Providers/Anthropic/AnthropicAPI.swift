@@ -60,6 +60,7 @@ public enum AnthropicAPI {
                     "type": "enabled",
                     "budget_tokens": defaultThinkingBudgetTokens
                 ] as [String: Any]
+                body["max_tokens"] = maxTokens + defaultThinkingBudgetTokens
             case "adaptive":
                 body["thinking"] = ["type": "adaptive"]
             default:

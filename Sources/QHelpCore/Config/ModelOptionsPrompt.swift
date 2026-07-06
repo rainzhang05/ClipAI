@@ -32,18 +32,6 @@ public enum ModelOptionsPrompt {
             options.reasoningEffort = effort
         }
 
-        if profile.supportsTemperature {
-            options.temperature = 0.0
-        }
-
-        if profile.supportsTopP {
-            options.topP = 1.0
-        }
-
-        if profile.supportsVerbosity {
-            options.verbosity = "low"
-        }
-
         return options
     }
 
