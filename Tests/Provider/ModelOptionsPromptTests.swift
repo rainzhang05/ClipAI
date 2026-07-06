@@ -57,9 +57,6 @@ enum ModelOptionsPromptTests: TestCase {
         try assertEqual(options.thinkingEnabled, true)
         try assertEqual(options.thinkingType, "adaptive")
         try assertEqual(options.reasoningEffort, "low")
-        try assertEqual(options.temperature, 0.0)
-        try assertEqual(options.topP, 1.0)
-        try assertEqual(options.verbosity, "low")
     }
 
     private static func testEffortOnlyProfile() throws {

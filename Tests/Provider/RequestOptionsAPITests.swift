@@ -19,9 +19,10 @@ enum RequestOptionsAPITests: TestCase {
             thinkingType: "adaptive"
         )
 
+        let textMessage = AnthropicAPI.buildUserMessage(content: .text("hello"))
         let body = AnthropicAPI.buildRequestBody(
             modelIdentifier: "claude-sonnet-4-6",
-            content: .text("hello"),
+            messages: [textMessage],
             options: options
         )
 
@@ -35,9 +36,10 @@ enum RequestOptionsAPITests: TestCase {
             thinkingEnabled: true,
             thinkingType: "enabled"
         )
+        let enabledMessage = AnthropicAPI.buildUserMessage(content: .text("hello"))
         let enabledBody = AnthropicAPI.buildRequestBody(
             modelIdentifier: "claude-sonnet-4-6",
-            content: .text("hello"),
+            messages: [enabledMessage],
             options: enabledOptions
         )
         let enabledThinking = enabledBody["thinking"] as? [String: Any]
@@ -51,9 +53,10 @@ enum RequestOptionsAPITests: TestCase {
             thinkingEnabled: false
         )
 
+        let textMessage = AnthropicAPI.buildUserMessage(content: .text("hello"))
         let body = AnthropicAPI.buildRequestBody(
             modelIdentifier: "claude-opus-4-8",
-            content: .text("hello"),
+            messages: [textMessage],
             options: options
         )
 
@@ -67,9 +70,10 @@ enum RequestOptionsAPITests: TestCase {
             thinkingEnabled: true,
             thinkingType: "adaptive"
         )
+        let textMessage2 = AnthropicAPI.buildUserMessage(content: .text("hello"))
         let adaptiveBody = AnthropicAPI.buildRequestBody(
             modelIdentifier: "claude-opus-4-8",
-            content: .text("hello"),
+            messages: [textMessage2],
             options: adaptiveOnly
         )
         let thinking = adaptiveBody["thinking"] as? [String: Any]
@@ -85,10 +89,13 @@ enum RequestOptionsAPITests: TestCase {
             verbosity: "low"
         )
 
-        let body = try OpenAICompatibleAPI.buildRequestBody(
-            modelIdentifier: "gpt-5.5",
+        let textMessage = try OpenAICompatibleAPI.buildUserMessage(
             content: .text("hello"),
-            supportsImages: true,
+            supportsImages: true
+        )
+        let body = OpenAICompatibleAPI.buildRequestBody(
+            modelIdentifier: "gpt-5.5",
+            messages: [textMessage],
             options: options
         )
 
@@ -105,9 +112,12 @@ enum RequestOptionsAPITests: TestCase {
             topP: 1.0
         )
 
-        let enabledBody = try GeminiAPI.buildRequestBody(
+        let textMessage = try GeminiAPI.buildUserMessage(
             content: .text("hello"),
-            supportsImages: true,
+            supportsImages: true
+        )
+        let enabledBody = GeminiAPI.buildRequestBody(
+            contents: [textMessage],
             options: enabled
         )
 
@@ -118,9 +128,12 @@ enum RequestOptionsAPITests: TestCase {
         try assertEqual(enabledThinking?["thinkingBudget"] as? Int, 8192)
 
         let disabled = ModelRequestOptions(thinkingEnabled: false)
-        let disabledBody = try GeminiAPI.buildRequestBody(
+        let textMessage2 = try GeminiAPI.buildUserMessage(
             content: .text("hello"),
-            supportsImages: true,
+            supportsImages: true
+        )
+        let disabledBody = GeminiAPI.buildRequestBody(
+            contents: [textMessage2],
             options: disabled
         )
         let disabledConfig = disabledBody["generationConfig"] as? [String: Any]

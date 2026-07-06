@@ -5,18 +5,20 @@ enum AnthropicAPITests: TestCase {
     static let name = "AnthropicAPITests"
 
     static func run() throws {
+        let textMessage = AnthropicAPI.buildUserMessage(content: .text("hello"))
         let textBody = AnthropicAPI.buildRequestBody(
             modelIdentifier: "claude-sonnet-4-6",
-            content: .text("hello")
+            messages: [textMessage]
         )
         try assertEqual(textBody["model"] as? String, "claude-sonnet-4-6")
         let messages = textBody["messages"] as? [[String: Any]]
         let textContent = messages?.first?["content"] as? String
         try assertEqual(textContent, "hello")
 
+        let imageMessage = AnthropicAPI.buildUserMessage(content: .image(Data([0x01, 0x02]), mediaType: "image/png"))
         let imageBody = AnthropicAPI.buildRequestBody(
             modelIdentifier: "claude-sonnet-4-6",
-            content: .image(Data([0x01, 0x02]), mediaType: "image/png")
+            messages: [imageMessage]
         )
         let imageMessages = imageBody["messages"] as? [[String: Any]]
         let blocks = imageMessages?.first?["content"] as? [[String: Any]]
