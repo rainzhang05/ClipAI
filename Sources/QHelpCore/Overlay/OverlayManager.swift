@@ -6,9 +6,37 @@ import SwiftUI
 /// The overlay appears in the bottom-right corner, fades in, and stays visible
 /// until the user clicks the header to dismiss. Text can be scrolled and copied.
 /// The panel never activates the application or steals keyboard focus.
+final class OverlayPanel: NSPanel {
+    var onSpacePressed: (() -> Void)?
+    var onCPressed: (() -> Void)?
+
+    override var canBecomeKey: Bool {
+        return true
+    }
+
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .keyDown {
+            let chars = event.charactersIgnoringModifiers ?? ""
+            if chars == " " {
+                onSpacePressed?()
+                return
+            } else if chars == "c" || chars == "C" {
+                onCPressed?()
+                return
+            }
+        }
+        super.sendEvent(event)
+    }
+}
+
+/// Manages the floating overlay panel that displays AI responses.
+///
+/// The overlay appears in the bottom-right corner, fades in, and stays visible
+/// until the user clicks the header to dismiss. Text can be scrolled and copied.
+/// The panel never activates the application or steals keyboard focus.
 final class OverlayManager {
 
-    private var panel: NSPanel?
+    private var panel: OverlayPanel?
 
     private let animationDuration: TimeInterval = 0.3
     private let contentReplaceDuration: TimeInterval = 0.15
@@ -28,6 +56,13 @@ final class OverlayManager {
             self?.dismiss()
         }
 
+        panel.onSpacePressed = { [weak self] in
+            self?.dismiss()
+        }
+        panel.onCPressed = {
+            OverlayClipboard.copy(text)
+        }
+
         let hostingView = configureHostingView(rootView: overlayView)
         let contentSize = hostingView.fittingSize
         hostingView.setFrameSize(contentSize)
@@ -38,7 +73,7 @@ final class OverlayManager {
 
         if !wasVisible {
             panel.alphaValue = 0
-            panel.orderFrontRegardless()
+            panel.makeKeyAndOrderFront(nil)
 
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = animationDuration
@@ -47,6 +82,7 @@ final class OverlayManager {
             }
         } else {
             panel.alphaValue = 0.85
+            panel.makeKey()
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = contentReplaceDuration
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
@@ -78,7 +114,7 @@ final class OverlayManager {
     }
 
     private func createPanel() {
-        let panel = NSPanel(
+        let panel = OverlayPanel(
             contentRect: NSRect(x: 0, y: 0, width: 460, height: 200),
             styleMask: OverlayInteractionPolicy.panelStyleMask,
             backing: .buffered,
@@ -100,7 +136,7 @@ final class OverlayManager {
         self.panel = panel
     }
 
-    private func positionPanel(_ panel: NSPanel, size: CGSize) {
+    private func positionPanel(_ panel: OverlayPanel, size: CGSize) {
         guard let screen = NSScreen.main else { return }
 
         let visibleFrame = screen.visibleFrame
