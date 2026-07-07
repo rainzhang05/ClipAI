@@ -7,8 +7,8 @@ import SwiftUI
 /// until the user clicks the header to dismiss. Text can be scrolled and copied.
 /// The panel never activates the application or steals keyboard focus.
 final class OverlayPanel: NSPanel {
-    var onSpacePressed: (() -> Void)?
-    var onCPressed: (() -> Void)?
+    var onSpacePressed: (() -> Bool)?
+    var onCPressed: (() -> Bool)?
 
     override var canBecomeKey: Bool {
         return true
@@ -18,11 +18,13 @@ final class OverlayPanel: NSPanel {
         if event.type == .keyDown {
             let chars = event.charactersIgnoringModifiers ?? ""
             if chars == " " {
-                onSpacePressed?()
-                return
+                if onSpacePressed?() == true {
+                    return
+                }
             } else if chars == "c" || chars == "C" {
-                onCPressed?()
-                return
+                if onCPressed?() == true {
+                    return
+                }
             }
         }
         super.sendEvent(event)
@@ -37,6 +39,9 @@ final class OverlayPanel: NSPanel {
 final class OverlayManager {
 
     private var panel: OverlayPanel?
+    private let keyboardMonitor = OverlayKeyboardMonitor()
+    private let keyboardState = OverlayEntryKeyboardState()
+    private var currentResponseText = ""
 
     private let animationDuration: TimeInterval = 0.3
     private let contentReplaceDuration: TimeInterval = 0.15
@@ -51,6 +56,9 @@ final class OverlayManager {
 
         guard let panel = panel else { return }
 
+        currentResponseText = text
+        keyboardState.beginEntry()
+
         let displayText = text.isEmpty ? "(empty response)" : text
         let overlayView = OverlayView(text: displayText, isError: isError) { [weak self] in
             self?.dismiss()
@@ -58,9 +66,10 @@ final class OverlayManager {
 
         panel.onSpacePressed = { [weak self] in
             self?.dismiss()
+            return true
         }
-        panel.onCPressed = {
-            OverlayClipboard.copy(text)
+        panel.onCPressed = { [weak self] in
+            self?.copyCurrentEntryIfNeeded() ?? false
         }
 
         let hostingView = configureHostingView(rootView: overlayView)
@@ -74,6 +83,9 @@ final class OverlayManager {
         if !wasVisible {
             panel.alphaValue = 0
             panel.makeKeyAndOrderFront(nil)
+            keyboardMonitor.start { [weak self] action in
+                self?.handleKeyboardAction(action) ?? false
+            }
 
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = animationDuration
@@ -96,6 +108,8 @@ final class OverlayManager {
     private func dismiss() {
         guard let panel = panel, panel.isVisible else { return }
 
+        keyboardMonitor.stop()
+
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = animationDuration
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
@@ -103,6 +117,25 @@ final class OverlayManager {
         }, completionHandler: { [weak self] in
             self?.panel?.orderOut(nil)
         })
+    }
+
+    private func handleKeyboardAction(_ action: OverlayKeyboardAction) -> Bool {
+        switch action {
+        case .copy:
+            return copyCurrentEntryIfNeeded()
+        case .dismiss:
+            dismiss()
+            return true
+        }
+    }
+
+    private func copyCurrentEntryIfNeeded() -> Bool {
+        guard keyboardState.consumeCopyIfNeeded() else {
+            return false
+        }
+
+        OverlayClipboard.copy(currentResponseText)
+        return true
     }
 
     private func configureHostingView<Content: View>(rootView: Content) -> NSHostingView<Content> {

@@ -32,6 +32,23 @@ enum OverlayKeyboardShortcut {
     }
 }
 
+final class OverlayEntryKeyboardState {
+    private var hasCopiedCurrentEntry = false
+
+    func beginEntry() {
+        hasCopiedCurrentEntry = false
+    }
+
+    func consumeCopyIfNeeded() -> Bool {
+        guard !hasCopiedCurrentEntry else {
+            return false
+        }
+
+        hasCopiedCurrentEntry = true
+        return true
+    }
+}
+
 final class OverlayKeyboardMonitor {
     typealias Handler = (OverlayKeyboardAction) -> Bool
 
@@ -39,6 +56,7 @@ final class OverlayKeyboardMonitor {
     private var runLoopSource: CFRunLoopSource?
     private var handler: Handler?
     private var didRequestPermission = false
+    private var didWarnUnavailable = false
 
     var isActive: Bool {
         eventTap != nil
@@ -64,11 +82,14 @@ final class OverlayKeyboardMonitor {
             callback: OverlayKeyboardMonitor.handleEvent,
             userInfo: Unmanaged.passUnretained(self).toOpaque()
         ) else {
-            print("""
-            Warning: ClipAI could not enable global overlay keyboard controls.
-            Grant ClipAI Accessibility/Input Monitoring permission in System Settings > Privacy & Security, then restart ClipAI.
-            Until then, click the overlay before pressing c or Space.
-            """)
+            if !didWarnUnavailable {
+                didWarnUnavailable = true
+                print("""
+                Warning: ClipAI could not enable global overlay keyboard controls.
+                Grant ClipAI Accessibility/Input Monitoring permission in System Settings > Privacy & Security, then restart ClipAI.
+                Until then, click the overlay before pressing c or Space.
+                """)
+            }
             return
         }
 

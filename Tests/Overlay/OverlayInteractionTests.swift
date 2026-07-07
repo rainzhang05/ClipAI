@@ -28,8 +28,14 @@ enum OverlayInteractionTests: TestCase {
 
         var spacePressed = false
         var cPressed = false
-        panel.onSpacePressed = { spacePressed = true }
-        panel.onCPressed = { cPressed = true }
+        panel.onSpacePressed = {
+            spacePressed = true
+            return true
+        }
+        panel.onCPressed = {
+            cPressed = true
+            return true
+        }
 
         // Simulate Space press
         if let spaceEvent = NSEvent.keyEvent(
@@ -69,8 +75,14 @@ enum OverlayInteractionTests: TestCase {
         // Simulate 'x' press (other key, should not trigger callbacks)
         var spacePressed2 = false
         var cPressed2 = false
-        panel.onSpacePressed = { spacePressed2 = true }
-        panel.onCPressed = { cPressed2 = true }
+        panel.onSpacePressed = {
+            spacePressed2 = true
+            return true
+        }
+        panel.onCPressed = {
+            cPressed2 = true
+            return true
+        }
 
         if let xEvent = NSEvent.keyEvent(
             with: .keyDown,
@@ -114,5 +126,12 @@ enum OverlayInteractionTests: TestCase {
             OverlayKeyboardShortcut.action(forKeyCode: 7, flags: [], isRepeat: false),
             nil
         )
+
+        let entryKeyboardState = OverlayEntryKeyboardState()
+        try assertTrue(entryKeyboardState.consumeCopyIfNeeded())
+        try assertFalse(entryKeyboardState.consumeCopyIfNeeded())
+
+        entryKeyboardState.beginEntry()
+        try assertTrue(entryKeyboardState.consumeCopyIfNeeded())
     }
 }
