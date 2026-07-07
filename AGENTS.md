@@ -49,7 +49,7 @@ ClipboardMonitor (NSPasteboard polling)
 ### Key behaviors
 
 - **Accessory app** — `NSApplication` uses `.accessory` activation policy; overlay is a `.nonactivatingPanel` and never steals focus.
-- **Overlay** — Bottom-right floating panel; click header to dismiss; scrollable content; Copy all writes raw response to pasteboard.
+- **Overlay** — Bottom-right floating panel; click header or press Space while visible to dismiss; press `c` while visible to copy the raw response once. Global key consumption requires macOS permission and falls back to focused-panel shortcuts when unavailable.
 - **Markdown** — Success responses render via native block parser (`MarkdownDocumentParser` + `ResponseMarkdownView`); errors use plain text.
 - **API keys** — One Keychain entry per provider (`clipai.<kind>`); env vars override Keychain.
 - **Model options** — `ModelCapabilityFetcher` reads provider Models API metadata; `ModelOptionsPrompt` asks for thinking/effort when supported; auto-applies temperature/top_p/verbosity defaults when metadata indicates support. OpenAI-compatible vendors without extended metadata get no prompts (metadata-only, no probe requests).

@@ -33,8 +33,9 @@ Press `Ctrl+C` in the terminal to quit.
 
 - Scroll the overlay to read longer responses.
 - Select and copy text directly from the overlay.
-- Click the overlay, then press `c` to copy the full raw response.
-- Click the overlay, then press `Space` to dismiss it.
+- Press `c` while the overlay is visible to copy the full raw response once.
+- Press `Space` while the overlay is visible to dismiss it.
+- If macOS has not granted ClipAI keyboard monitoring permission, click the overlay before pressing `c` or `Space`.
 - ClipAI runs as an accessory app, so the overlay does not switch you away from your current app.
 
 ## API Keys

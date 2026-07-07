@@ -68,7 +68,10 @@ public enum CLIParser {
 
         OVERLAY:
           Stays visible until you click the header to dismiss.
-          Scroll and copy response text without changing your active app.
+          Press c while the overlay is visible to copy the full response once.
+          Press Space while the overlay is visible to dismiss it.
+          If macOS has not granted keyboard monitoring permission, click the
+          overlay before pressing c or Space.
 
         PROVIDER ROUTING (model name prefix):
         \(ProviderCatalog.routingHelp)
