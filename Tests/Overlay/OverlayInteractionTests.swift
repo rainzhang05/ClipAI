@@ -89,5 +89,30 @@ enum OverlayInteractionTests: TestCase {
 
         try assertFalse(spacePressed2)
         try assertFalse(cPressed2)
+
+        try assertEqual(
+            OverlayKeyboardShortcut.action(forKeyCode: 8, flags: [], isRepeat: false),
+            .copy
+        )
+        try assertEqual(
+            OverlayKeyboardShortcut.action(forKeyCode: 49, flags: [], isRepeat: false),
+            .dismiss
+        )
+        try assertEqual(
+            OverlayKeyboardShortcut.action(forKeyCode: 8, flags: [.maskCommand], isRepeat: false),
+            nil
+        )
+        try assertEqual(
+            OverlayKeyboardShortcut.action(forKeyCode: 49, flags: [.maskShift], isRepeat: false),
+            nil
+        )
+        try assertEqual(
+            OverlayKeyboardShortcut.action(forKeyCode: 8, flags: [], isRepeat: true),
+            nil
+        )
+        try assertEqual(
+            OverlayKeyboardShortcut.action(forKeyCode: 7, flags: [], isRepeat: false),
+            nil
+        )
     }
 }
