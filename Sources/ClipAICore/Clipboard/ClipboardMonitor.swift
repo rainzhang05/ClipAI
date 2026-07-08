@@ -67,6 +67,12 @@ final class ClipboardMonitor {
             return
         }
 
+        // Some clipboard managers may rewrite copied text and strip custom pasteboard
+        // types. Keep a short-lived hash guard to avoid re-sending our own response.
+        if case .text = content, ClipboardSelfCopyGuard.shouldIgnoreTextHash(content.contentHash) {
+            return
+        }
+
         // Duplicate detection via SHA-256 hash
         let hash = content.contentHash
         guard hash != lastContentHash else { return }

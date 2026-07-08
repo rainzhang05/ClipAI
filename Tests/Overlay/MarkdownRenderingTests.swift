@@ -23,6 +23,7 @@ enum MarkdownRenderingTests: TestCase {
         try testAdditionalBlockTypes()
         try testMalformedMarkdownFallbacks()
         try testOverlayClipboardAndPlainTextMode()
+        try testSelfCopyGuard()
     }
 
     private static func testBasicMarkdownBlocks() throws {
@@ -108,5 +109,12 @@ enum MarkdownRenderingTests: TestCase {
 
         let successView = OverlayView(text: "**Hello**", isError: false)
         try assertFalse(successView.usesPlainTextContent)
+    }
+
+    private static func testSelfCopyGuard() throws {
+        let hash = ClipboardContent.text("guarded response").contentHash
+        try assertFalse(ClipboardSelfCopyGuard.shouldIgnoreTextHash(hash))
+        ClipboardSelfCopyGuard.markCopiedTextHash(hash)
+        try assertTrue(ClipboardSelfCopyGuard.shouldIgnoreTextHash(hash))
     }
 }

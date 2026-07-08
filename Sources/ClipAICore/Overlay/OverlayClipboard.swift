@@ -9,6 +9,10 @@ enum OverlayClipboard {
         pasteboard.clearContents()
 
         pasteboard.setString("true", forType: ClipboardPasteboardTypes.clipAIIgnore)
-        return pasteboard.setString(string, forType: .string)
+        let didSetString = pasteboard.setString(string, forType: .string)
+        if didSetString {
+            ClipboardSelfCopyGuard.markCopiedTextHash(ClipboardContent.text(string).contentHash)
+        }
+        return didSetString
     }
 }
