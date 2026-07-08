@@ -4,12 +4,19 @@ import Foundation
 public enum ModelOptionsPrompt {
 
     public typealias LineReader = () -> String?
+    public typealias OutputWriter = (String) -> Void
 
     private static var lineReader: LineReader = { readLine() }
+    private static var outputWriter: OutputWriter = { print($0) }
 
     /// Overrides stdin for tests. Pass `nil` to restore default `readLine()`.
     public static func setLineReader(_ reader: LineReader?) {
         lineReader = reader ?? { readLine() }
+    }
+
+    /// Overrides stdout for tests. Pass `nil` to restore default `print`.
+    public static func setOutputWriter(_ writer: OutputWriter?) {
+        outputWriter = writer ?? { print($0) }
     }
 
     public static func prompt(for profile: ModelParameterProfile) -> ModelRequestOptions {
@@ -42,11 +49,11 @@ public enum ModelOptionsPrompt {
     }
 
     private static func promptThinkingToggle(thinkingTypes: [String]) -> Bool {
-        print("")
+        writeLine()
         if thinkingTypes == ["adaptive"] {
-            print("Enable adaptive thinking? [y/N]")
+            writeLine("Enable adaptive thinking? [y/N]")
         } else {
-            print("Enable extended thinking? [y/N]")
+            writeLine("Enable extended thinking? [y/N]")
         }
         let input = lineReader()?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
         return input == "y" || input == "yes"
@@ -55,14 +62,14 @@ public enum ModelOptionsPrompt {
     private static func promptReasoningEffort(levels: [String]) -> String? {
         guard !levels.isEmpty else { return nil }
 
-        print("")
-        print("Reasoning effort:")
+        writeLine()
+        writeLine("Reasoning effort:")
         for (index, level) in levels.enumerated() {
-            print("  \(index + 1)) \(level)")
+            writeLine("  \(index + 1)) \(level)")
         }
 
         let defaultIndex = defaultEffortIndex(in: levels)
-        print("Choice [\(defaultIndex + 1)]:")
+        writeLine("Choice [\(defaultIndex + 1)]:")
         let input = lineReader()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         if input.isEmpty {
@@ -85,5 +92,9 @@ public enum ModelOptionsPrompt {
             return mediumIndex
         }
         return min(1, levels.count - 1)
+    }
+
+    private static func writeLine(_ text: String = "") {
+        outputWriter(text)
     }
 }

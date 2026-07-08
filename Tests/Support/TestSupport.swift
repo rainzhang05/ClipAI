@@ -33,6 +33,53 @@ protocol TestCase {
     static func run() throws
 }
 
+func runAsync(
+    timeout: TimeInterval = 5,
+    _ operation: @escaping () async throws -> Void
+) throws {
+    var thrownError: Error?
+    var finished = false
+
+    Task {
+        do {
+            try await operation()
+        } catch {
+            thrownError = error
+        }
+        finished = true
+    }
+
+    let deadline = Date().addingTimeInterval(timeout)
+    while !finished && Date() < deadline {
+        RunLoop.main.run(mode: .default, before: Date(timeIntervalSinceNow: 0.05))
+    }
+
+    if let thrownError {
+        throw thrownError
+    }
+
+    if !finished {
+        throw TestFailure.message("Async test timed out")
+    }
+}
+
+func waitUntil(
+    _ message: String = "Condition timed out",
+    timeout: TimeInterval = 5,
+    pollInterval: UInt64 = 50_000_000,
+    condition: @escaping () -> Bool
+) async throws {
+    let deadline = Date().addingTimeInterval(timeout)
+
+    while !condition() && Date() < deadline {
+        try await Task.sleep(nanoseconds: pollInterval)
+    }
+
+    if !condition() {
+        throw TestFailure.message(message)
+    }
+}
+
 enum TestSuites {
     static let all: [TestCase.Type] = [
         ClipboardContentTests.self,

@@ -9,33 +9,6 @@ enum RequestQueueTests: TestCase {
         try runAsync { try await testCancelAllStopsPendingWork() }
     }
 
-    private static func runAsync(_ operation: @escaping () async throws -> Void) throws {
-        var thrownError: Error?
-        var finished = false
-
-        Task {
-            do {
-                try await operation()
-            } catch {
-                thrownError = error
-            }
-            finished = true
-        }
-
-        let deadline = Date().addingTimeInterval(5)
-        while !finished && Date() < deadline {
-            RunLoop.main.run(mode: .default, before: Date(timeIntervalSinceNow: 0.05))
-        }
-
-        if let thrownError {
-            throw thrownError
-        }
-
-        if !finished {
-            throw TestFailure.message("Async test timed out")
-        }
-    }
-
     private static func testProcessesRequestsInOrder() async throws {
         let provider = MockProvider(responses: ["one", "two", "three"])
         let overlay = MockOverlayPresenter()
@@ -45,7 +18,9 @@ enum RequestQueueTests: TestCase {
         await queue.enqueue(.text("b"))
         await queue.enqueue(.text("c"))
 
-        try await Task.sleep(nanoseconds: 300_000_000)
+        try await waitUntil("Expected all queued requests to finish") {
+            provider.sendCount == 3 && overlay.messages.count == 3
+        }
 
         try assertEqual(provider.sendCount, 3)
         try assertEqual(overlay.messages, ["one", "two", "three"])
@@ -60,7 +35,9 @@ enum RequestQueueTests: TestCase {
         await queue.enqueue(.text("second"))
         await queue.cancelAll()
 
-        try await Task.sleep(nanoseconds: 200_000_000)
+        try await waitUntil("Expected in-flight request to be cancelled") {
+            provider.didCancel
+        }
 
         try assertTrue(provider.sendCount <= 1, "Expected at most one in-flight request")
     }
@@ -92,11 +69,16 @@ private final class SlowMockProvider: AIProvider {
     let displayName = "mock"
     let modelIdentifier = "mock"
     private(set) var sendCount = 0
+    private(set) var didCancel = false
 
     func send(content: ClipboardContent) async throws -> String {
         sendCount += 1
         try await Task.sleep(nanoseconds: 500_000_000)
         return "slow"
+    }
+
+    func cancelInFlightRequest() {
+        didCancel = true
     }
 }
 

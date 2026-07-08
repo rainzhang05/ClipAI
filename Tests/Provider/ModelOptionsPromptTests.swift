@@ -5,7 +5,11 @@ enum ModelOptionsPromptTests: TestCase {
     static let name = "ModelOptionsPromptTests"
 
     static func run() throws {
-        defer { ModelOptionsPrompt.setLineReader(nil) }
+        defer {
+            ModelOptionsPrompt.setLineReader(nil)
+            ModelOptionsPrompt.setOutputWriter(nil)
+        }
+        ModelOptionsPrompt.setOutputWriter { _ in }
 
         try testEmptyProfileReturnsNone()
         try testThinkingOffStillPromptsEffort()
