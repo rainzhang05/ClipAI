@@ -2,12 +2,14 @@ import Foundation
 
 /// Fetches model capability metadata from provider Models APIs.
 public enum ModelCapabilityFetcher {
+    public typealias Logger = (String) -> Void
 
     public static func fetch(
         kind: ProviderKind,
         modelIdentifier: String,
         apiKey: String,
-        session: URLSession? = nil
+        session: URLSession? = nil,
+        logger: @escaping Logger = { print($0) }
     ) async -> ModelParameterProfile {
         let session = session ?? ProviderHTTP.makeSession()
 
@@ -16,21 +18,24 @@ public enum ModelCapabilityFetcher {
             return await fetchAnthropic(
                 modelIdentifier: modelIdentifier,
                 apiKey: apiKey,
-                session: session
+                session: session,
+                logger: logger
             )
         case .gemini:
             return await fetchStandard(
                 kind: kind,
                 modelIdentifier: ProviderCatalog.normalizeGeminiModelIdentifier(modelIdentifier),
                 apiKey: apiKey,
-                session: session
+                session: session,
+                logger: logger
             )
         case .openai, .grok, .kimi, .deepseek, .qwen, .glm:
             return await fetchStandard(
                 kind: kind,
                 modelIdentifier: modelIdentifier,
                 apiKey: apiKey,
-                session: session
+                session: session,
+                logger: logger
             )
         }
     }
@@ -58,7 +63,8 @@ public enum ModelCapabilityFetcher {
     private static func fetchAnthropic(
         modelIdentifier: String,
         apiKey: String,
-        session: URLSession
+        session: URLSession,
+        logger: @escaping Logger
     ) async -> ModelParameterProfile {
         if let retrieveURL = ProviderCatalog.anthropicModelURL(modelIdentifier: modelIdentifier) {
             var retrieveRequest = URLRequest(url: retrieveURL)
@@ -76,17 +82,22 @@ public enum ModelCapabilityFetcher {
                     if isUseful(profile) {
                         return profile
                     }
-                    print(
+                    logger(
                         "Note: Model '\(modelIdentifier)' returned no capability metadata; trying model list..."
                     )
                 case 404:
                     break
                 default:
-                    reportHTTPFailure(modelIdentifier: modelIdentifier, statusCode: response.statusCode, data: data)
+                    reportHTTPFailure(
+                        modelIdentifier: modelIdentifier,
+                        statusCode: response.statusCode,
+                        data: data,
+                        logger: logger
+                    )
                     return .empty
                 }
             } catch {
-                reportNetworkFailure(modelIdentifier: modelIdentifier, error: error)
+                reportNetworkFailure(modelIdentifier: modelIdentifier, error: error, logger: logger)
                 return .empty
             }
         }
@@ -94,14 +105,16 @@ public enum ModelCapabilityFetcher {
         return await fetchAnthropicFromList(
             modelIdentifier: modelIdentifier,
             apiKey: apiKey,
-            session: session
+            session: session,
+            logger: logger
         )
     }
 
     private static func fetchAnthropicFromList(
         modelIdentifier: String,
         apiKey: String,
-        session: URLSession
+        session: URLSession,
+        logger: @escaping Logger
     ) async -> ModelParameterProfile {
         var after: String?
 
@@ -120,7 +133,8 @@ public enum ModelCapabilityFetcher {
                     reportHTTPFailure(
                         modelIdentifier: modelIdentifier,
                         statusCode: response.statusCode,
-                        data: data
+                        data: data,
+                        logger: logger
                     )
                     return .empty
                 }
@@ -141,12 +155,12 @@ public enum ModelCapabilityFetcher {
 
                 break
             } catch {
-                reportNetworkFailure(modelIdentifier: modelIdentifier, error: error)
+                reportNetworkFailure(modelIdentifier: modelIdentifier, error: error, logger: logger)
                 return .empty
             }
         }
 
-        print(
+        logger(
             "Note: Could not load model options for '\(modelIdentifier)' (model not found). Continuing without prompts."
         )
         return .empty
@@ -158,7 +172,8 @@ public enum ModelCapabilityFetcher {
         kind: ProviderKind,
         modelIdentifier: String,
         apiKey: String,
-        session: URLSession
+        session: URLSession,
+        logger: @escaping Logger
     ) async -> ModelParameterProfile {
         guard let request = makeRequest(
             kind: kind,
@@ -176,14 +191,15 @@ public enum ModelCapabilityFetcher {
                 reportHTTPFailure(
                     modelIdentifier: modelIdentifier,
                     statusCode: statusCode,
-                    data: Data()
+                    data: Data(),
+                    logger: logger
                 )
             } else {
-                reportNetworkFailure(modelIdentifier: modelIdentifier, error: error)
+                reportNetworkFailure(modelIdentifier: modelIdentifier, error: error, logger: logger)
             }
             return .empty
         } catch {
-            reportNetworkFailure(modelIdentifier: modelIdentifier, error: error)
+            reportNetworkFailure(modelIdentifier: modelIdentifier, error: error, logger: logger)
             return .empty
         }
     }
@@ -233,7 +249,8 @@ public enum ModelCapabilityFetcher {
     private static func reportHTTPFailure(
         modelIdentifier: String,
         statusCode: Int,
-        data: Data
+        data: Data,
+        logger: Logger
     ) {
         var message = "HTTP \(statusCode)"
         if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -241,13 +258,17 @@ public enum ModelCapabilityFetcher {
            let errorMessage = error["message"] as? String {
             message += " — \(errorMessage)"
         }
-        print(
+        logger(
             "Note: Could not load model options for '\(modelIdentifier)' (\(message)). Continuing without prompts."
         )
     }
 
-    private static func reportNetworkFailure(modelIdentifier: String, error: Error) {
-        print(
+    private static func reportNetworkFailure(
+        modelIdentifier: String,
+        error: Error,
+        logger: Logger
+    ) {
+        logger(
             "Note: Could not load model options for '\(modelIdentifier)' (\(error.localizedDescription)). Continuing without prompts."
         )
     }

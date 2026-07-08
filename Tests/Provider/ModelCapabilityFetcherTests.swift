@@ -10,6 +10,8 @@ enum ModelCapabilityFetcherTests: TestCase {
         try runAsync(testRetrieveSuccess)
         try runAsync(testRetrieve404UsesListFallback)
         try runAsync(testBothFailReturnsEmpty)
+        try runAsync(testOpenAICompatibleFetchUsesBearerModelURL)
+        try runAsync(testGeminiFetchUsesAPIKeyQueryAndNormalizedModel)
     }
 
     private static func testRetrieveSuccess() async throws {
@@ -49,7 +51,8 @@ enum ModelCapabilityFetcherTests: TestCase {
             kind: .anthropic,
             modelIdentifier: "claude-opus-4-8",
             apiKey: "test-key",
-            session: session
+            session: session,
+            logger: { _ in }
         )
 
         try assertEqual(profile.reasoningEffortLevels, ["low", "medium", "high"])
@@ -99,7 +102,8 @@ enum ModelCapabilityFetcherTests: TestCase {
             kind: .anthropic,
             modelIdentifier: "claude-opus-4-8",
             apiKey: "test-key",
-            session: session
+            session: session,
+            logger: { _ in }
         )
 
         try assertEqual(profile.reasoningEffortLevels, ["medium"])
@@ -123,10 +127,104 @@ enum ModelCapabilityFetcherTests: TestCase {
             kind: .anthropic,
             modelIdentifier: "claude-missing",
             apiKey: "test-key",
-            session: session
+            session: session,
+            logger: { _ in }
         )
 
         try assertEqual(profile, ModelParameterProfile.empty)
+    }
+
+    private static func testOpenAICompatibleFetchUsesBearerModelURL() async throws {
+        let json = """
+        {
+          "id": "gpt-5.5",
+          "supported_parameters": [
+            "reasoning_effort",
+            "reasoning_effort_low",
+            "reasoning_effort_medium",
+            "temperature",
+            "top_p"
+          ]
+        }
+        """
+        var capturedRequest: URLRequest?
+
+        MockURLProtocol.requestHandler = { request in
+            capturedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(json.utf8))
+        }
+
+        let session = makeMockSession()
+        let profile = await ModelCapabilityFetcher.fetch(
+            kind: .openai,
+            modelIdentifier: "gpt-5.5",
+            apiKey: "openai-key",
+            session: session,
+            logger: { _ in }
+        )
+
+        try assertEqual(
+            capturedRequest?.url?.absoluteString,
+            "https://api.openai.com/v1/models/gpt-5.5"
+        )
+        try assertEqual(
+            capturedRequest?.value(forHTTPHeaderField: "Authorization"),
+            "Bearer openai-key"
+        )
+        try assertEqual(profile.reasoningEffortLevels, ["low", "medium"])
+        try assertTrue(profile.supportsTemperature)
+        try assertTrue(profile.supportsTopP)
+    }
+
+    private static func testGeminiFetchUsesAPIKeyQueryAndNormalizedModel() async throws {
+        let json = """
+        {
+          "name": "models/gemini-2.5-flash",
+          "thinking": true,
+          "temperature": 1.0,
+          "topP": 0.95
+        }
+        """
+        var capturedRequest: URLRequest?
+
+        MockURLProtocol.requestHandler = { request in
+            capturedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(json.utf8))
+        }
+
+        let session = makeMockSession()
+        let profile = await ModelCapabilityFetcher.fetch(
+            kind: .gemini,
+            modelIdentifier: "models/gemini-2.5-flash",
+            apiKey: "gemini-key",
+            session: session,
+            logger: { _ in }
+        )
+
+        try assertEqual(capturedRequest?.url?.path, "/v1beta/models/gemini-2.5-flash")
+        try assertEqual(
+            URLComponents(url: capturedRequest!.url!, resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .first(where: { $0.name == "key" })?
+                .value,
+            "gemini-key"
+        )
+        try assertEqual(capturedRequest?.value(forHTTPHeaderField: "Authorization"), nil)
+        try assertTrue(profile.supportsThinkingToggle)
+        try assertTrue(profile.supportsTemperature)
+        try assertTrue(profile.supportsTopP)
     }
 
     private static func makeMockSession() -> URLSession {
