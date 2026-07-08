@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The SwiftUI view displayed inside the floating overlay panel.
@@ -85,12 +86,8 @@ struct OverlayView: View {
     }
 
     private var closeButton: some View {
-        Button(action: onDismiss) {
-            Circle()
-                .fill(Color(red: 1.0, green: 0.373, blue: 0.341))
-                .frame(width: 12, height: 12)
-        }
-        .buttonStyle(.plain)
+        CloseTrafficLightButton(action: onDismiss)
+            .frame(width: 12, height: 12)
         .accessibilityLabel("Close")
     }
 
@@ -153,6 +150,84 @@ private struct LiquidGlassCard: ViewModifier {
         } else {
             content.background(.regularMaterial, in: shape)
         }
+    }
+}
+
+private struct CloseTrafficLightButton: NSViewRepresentable {
+    let action: () -> Void
+
+    func makeNSView(context: Context) -> HoverCloseButton {
+        HoverCloseButton(action: action)
+    }
+
+    func updateNSView(_ nsView: HoverCloseButton, context: Context) {
+        nsView.actionHandler = action
+    }
+}
+
+private final class HoverCloseButton: NSButton {
+    var actionHandler: (() -> Void)?
+    private let iconView = NSImageView()
+    private var trackingArea: NSTrackingArea?
+
+    init(action: @escaping () -> Void) {
+        self.actionHandler = action
+        super.init(frame: NSRect(x: 0, y: 0, width: 12, height: 12))
+        isBordered = false
+        title = ""
+        setButtonType(.momentaryChange)
+        target = self
+        self.action = #selector(handlePress)
+
+        wantsLayer = true
+        layer?.backgroundColor = NSColor(red: 1.0, green: 0.373, blue: 0.341, alpha: 1.0).cgColor
+        layer?.cornerRadius = 6
+
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        iconView.image = NSImage(
+            systemSymbolName: "xmark",
+            accessibilityDescription: nil
+        )?.withSymbolConfiguration(.init(pointSize: 7, weight: .bold))
+        iconView.contentTintColor = NSColor.black.withAlphaComponent(0.75)
+        iconView.isHidden = true
+        addSubview(iconView)
+
+        NSLayoutConstraint.activate([
+            iconView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            iconView.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        nil
+    }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea {
+            removeTrackingArea(trackingArea)
+        }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.activeInKeyWindow, .mouseEnteredAndExited, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        iconView.isHidden = false
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        iconView.isHidden = true
+    }
+
+    @objc private func handlePress() {
+        actionHandler?()
     }
 }
 
