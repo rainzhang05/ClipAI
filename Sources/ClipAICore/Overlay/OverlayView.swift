@@ -4,22 +4,39 @@ import SwiftUI
 struct OverlayView: View {
     @ObservedObject private var displayState: OverlayDisplayState
     let onDismiss: () -> Void
+    let onCopy: () -> Void
 
-    init(text: String, isError: Bool = false, onDismiss: @escaping () -> Void = {}) {
+    init(
+        text: String,
+        isError: Bool = false,
+        onDismiss: @escaping () -> Void = {},
+        onCopy: @escaping () -> Void = {}
+    ) {
         self.init(
             displayState: OverlayDisplayState(text: text, isError: isError),
-            onDismiss: onDismiss
+            onDismiss: onDismiss,
+            onCopy: onCopy
         )
     }
 
-    init(displayState: OverlayDisplayState, onDismiss: @escaping () -> Void = {}) {
+    init(
+        displayState: OverlayDisplayState,
+        onDismiss: @escaping () -> Void = {},
+        onCopy: @escaping () -> Void = {}
+    ) {
         self.displayState = displayState
         self.onDismiss = onDismiss
+        self.onCopy = onCopy
     }
 
     /// Invokes the dismiss callback (used by unit tests).
     func triggerDismiss() {
         onDismiss()
+    }
+
+    /// Invokes the copy callback (used by unit tests).
+    func triggerCopy() {
+        onCopy()
     }
 
     /// Whether the overlay renders plain text instead of markdown.
@@ -37,40 +54,69 @@ struct OverlayView: View {
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 8) {
-            copiedToastSlot
+            copyButtonSlot
             cardContent
-                .modifier(LiquidGlassCard())
         }
-        .animation(.easeOut(duration: 0.18), value: displayState.showsCopiedToast)
+        .animation(.easeOut(duration: 0.18), value: displayState.hasCopied)
     }
 
     private var cardContent: some View {
-        contentView
-            .padding(16)
-            .frame(width: OverlayMetrics.panelWidth, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 0) {
+            closeButtonRow
+            contentView
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
+        .frame(width: OverlayMetrics.panelWidth, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .modifier(LiquidGlassCard())
+        .clipShape(cardShape)
     }
 
-    // MARK: - Content
+    // MARK: - Controls
 
-    private var copiedToastSlot: some View {
-        ZStack(alignment: .trailing) {
-            if displayState.showsCopiedToast {
-                Text("Copied!")
+    private var closeButtonRow: some View {
+        HStack {
+            closeButton
+            Spacer()
+        }
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+    }
+
+    private var closeButton: some View {
+        Button(action: onDismiss) {
+            Circle()
+                .fill(Color(red: 1.0, green: 0.373, blue: 0.341))
+                .frame(width: 12, height: 12)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Close")
+    }
+
+    private var copyButtonSlot: some View {
+        HStack {
+            Spacer()
+            Button(action: onCopy) {
+                Text(displayState.hasCopied ? "Copied" : "Copy")
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.primary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
                     .modifier(LiquidGlassCard())
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
+            .buttonStyle(.plain)
+            .disabled(displayState.hasCopied)
+            .accessibilityLabel(displayState.hasCopied ? "Copied" : "Copy")
         }
         .frame(
             width: OverlayMetrics.panelWidth,
-            height: OverlayMetrics.toastHeight,
+            height: OverlayMetrics.copyButtonHeight,
             alignment: .trailing
         )
     }
+
+    // MARK: - Content
 
     @ViewBuilder
     private var contentView: some View {
@@ -88,29 +134,36 @@ struct OverlayView: View {
         }
         .frame(maxHeight: OverlayMetrics.maxContentHeight)
     }
+
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: OverlayMetrics.cardCornerRadius, style: .continuous)
+    }
 }
 
 // MARK: - Liquid Glass
 
 private struct LiquidGlassCard: ViewModifier {
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: OverlayMetrics.cardCornerRadius, style: .continuous)
+    }
+
     func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            content.modifier(LiquidGlassCardOS26())
+            content.modifier(LiquidGlassCardOS26(shape: shape))
         } else {
-            content.background(
-                .regularMaterial,
-                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
-            )
+            content.background(.regularMaterial, in: shape)
         }
     }
 }
 
 @available(macOS 26.0, *)
 private struct LiquidGlassCardOS26: ViewModifier {
+    let shape: RoundedRectangle
+
     func body(content: Content) -> some View {
         GlassEffectContainer {
             content
         }
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .glassEffect(.regular, in: shape)
     }
 }
