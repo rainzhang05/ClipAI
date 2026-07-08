@@ -7,17 +7,34 @@ public enum ProviderRegistry {
 
     public static func resolve(
         modelName: String,
-        options: ModelRequestOptions = .none
+        options: ModelRequestOptions = .none,
+        promptIfMissing: Bool = true
     ) -> AIProvider? {
         guard let kind = ProviderCatalog.kind(for: modelName) else {
             return nil
         }
 
-        guard let apiKey = APIKeyStore.resolveKey(for: kind, promptIfMissing: true),
+        guard let apiKey = APIKeyStore.resolveKey(for: kind, promptIfMissing: promptIfMissing),
               !apiKey.isEmpty else {
-            print("Error: No \(kind.displayName) API key found.")
-            print("Set \(kind.envVarName) or enter your key when prompted.")
-            exit(1)
+            return nil
+        }
+
+        return makeProvider(
+            modelName: modelName,
+            kind: kind,
+            apiKey: apiKey,
+            options: options
+        )
+    }
+
+    public static func makeProvider(
+        modelName: String,
+        apiKey: String,
+        options: ModelRequestOptions = .none
+    ) -> AIProvider? {
+        guard let kind = ProviderCatalog.kind(for: modelName),
+              !apiKey.isEmpty else {
+            return nil
         }
 
         return makeProvider(

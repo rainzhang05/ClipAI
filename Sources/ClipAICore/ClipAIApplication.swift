@@ -5,39 +5,28 @@ public enum ClipAIApplication {
     public static func run(with arguments: [String]) {
         let config = CLIParser.parse(arguments)
 
-        guard ProviderCatalog.kind(for: config.modelName) != nil else {
-            print("Error: Cannot route model '\(config.modelName)' to a provider.")
-            print("\nUse an exact API model name with a recognized prefix:\n")
-            print(ProviderCatalog.routingHelp)
-            exit(1)
+        guard let kind = ProviderCatalog.kind(for: config.modelName) else {
+            exitWithRoutingError(modelName: config.modelName)
         }
 
         guard let apiKey = ProviderRegistry.resolveAPIKey(for: config.modelName, promptIfMissing: true),
               !apiKey.isEmpty else {
-            if let kind = ProviderRegistry.providerKind(for: config.modelName) {
-                print("Error: No \(kind.displayName) API key found.")
-                print("Set \(kind.envVarName) or enter your key when prompted.")
-            }
-            exit(1)
+            exitWithMissingAPIKey(kind: kind)
         }
 
-        if let kind = ProviderRegistry.providerKind(for: config.modelName) {
-            print("ClipAI\n")
-            print("Provider: \(kind.displayName)")
-            print("Model: \(config.modelName)\n")
-        }
+        print("ClipAI\n")
+        print("Provider: \(kind.displayName)")
+        print("Model: \(config.modelName)\n")
 
         let profile = fetchCapabilities(modelName: config.modelName, apiKey: apiKey)
         let options = ModelOptionsPrompt.prompt(for: profile)
 
-        guard let provider = ProviderRegistry.resolve(
+        guard let provider = ProviderRegistry.makeProvider(
             modelName: config.modelName,
+            apiKey: apiKey,
             options: options
         ) else {
-            print("Error: Cannot route model '\(config.modelName)' to a provider.")
-            print("\nUse an exact API model name with a recognized prefix:\n")
-            print(ProviderCatalog.routingHelp)
-            exit(1)
+            exitWithRoutingError(modelName: config.modelName)
         }
 
         let app = NSApplication.shared
@@ -89,5 +78,18 @@ public enum ClipAIApplication {
 
         semaphore.wait()
         return profile
+    }
+
+    private static func exitWithRoutingError(modelName: String) -> Never {
+        print("Error: Cannot route model '\(modelName)' to a provider.")
+        print("\nUse an exact API model name with a recognized prefix:\n")
+        print(ProviderCatalog.routingHelp)
+        exit(1)
+    }
+
+    private static func exitWithMissingAPIKey(kind: ProviderKind) -> Never {
+        print("Error: No \(kind.displayName) API key found.")
+        print("Set \(kind.envVarName) or enter your key when prompted.")
+        exit(1)
     }
 }
