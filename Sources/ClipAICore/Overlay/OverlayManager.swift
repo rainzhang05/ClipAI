@@ -2,10 +2,6 @@ import AppKit
 import SwiftUI
 
 /// Manages the floating overlay panel that displays AI responses.
-///
-/// The overlay appears in the bottom-right corner, fades in, and stays visible
-/// until the user clicks the header to dismiss. Text can be scrolled and copied.
-/// The panel never activates the application or steals keyboard focus.
 final class OverlayPanel: NSPanel {
     var onSpacePressed: (() -> Bool)?
     var onCPressed: (() -> Bool)?
@@ -15,19 +11,25 @@ final class OverlayPanel: NSPanel {
     }
 
     override func sendEvent(_ event: NSEvent) {
-        if event.type == .keyDown {
-            let chars = event.charactersIgnoringModifiers ?? ""
-            if chars == " " {
-                if onSpacePressed?() == true {
-                    return
-                }
-            } else if chars == "c" || chars == "C" {
-                if onCPressed?() == true {
-                    return
-                }
-            }
+        if event.type == .keyDown,
+           let action = OverlayKeyboardShortcut.action(
+            forKeyCode: Int64(event.keyCode),
+            flags: CGEventFlags(rawValue: UInt64(event.modifierFlags.rawValue)),
+            isRepeat: event.isARepeat
+           ),
+           handle(action) {
+            return
         }
         super.sendEvent(event)
+    }
+
+    private func handle(_ action: OverlayKeyboardAction) -> Bool {
+        switch action {
+        case .copy:
+            return onCPressed?() == true
+        case .dismiss:
+            return onSpacePressed?() == true
+        }
     }
 }
 
@@ -43,10 +45,6 @@ final class OverlayManager {
     private let keyboardState = OverlayEntryKeyboardState()
     private var currentResponseText = ""
     private var displayState: OverlayDisplayState?
-
-    private let animationDuration: TimeInterval = 0.3
-    private let contentReplaceDuration: TimeInterval = 0.15
-    private let screenMargin: CGFloat = 16.0
 
     // MARK: - Public Interface
 
@@ -103,7 +101,7 @@ final class OverlayManager {
             }
 
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = animationDuration
+                context.duration = OverlayMetrics.animationDuration
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
                 panel.animator().alphaValue = 1
             }
@@ -111,7 +109,7 @@ final class OverlayManager {
             panel.alphaValue = 0.85
             panel.makeKey()
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = contentReplaceDuration
+                context.duration = OverlayMetrics.contentReplaceDuration
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
                 panel.animator().alphaValue = 1
             }
@@ -126,15 +124,15 @@ final class OverlayManager {
         keyboardMonitor.stop()
 
         NSAnimationContext.runAnimationGroup({ context in
-            context.duration = animationDuration
+            context.duration = OverlayMetrics.animationDuration
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
             panel.animator().alphaValue = 0
             if slideOut {
                 var frame = panel.frame
                 if let screen = panel.screen ?? NSScreen.main {
-                    frame.origin.x = screen.visibleFrame.maxX + screenMargin
+                    frame.origin.x = screen.visibleFrame.maxX + OverlayMetrics.screenMargin
                 } else {
-                    frame.origin.x += frame.width + screenMargin
+                    frame.origin.x += frame.width + OverlayMetrics.screenMargin
                 }
                 panel.animator().setFrame(frame, display: true)
             }
@@ -173,7 +171,7 @@ final class OverlayManager {
 
     private func createPanel() {
         let panel = OverlayPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 460, height: 200),
+            contentRect: NSRect(origin: .zero, size: OverlayMetrics.initialPanelSize),
             styleMask: OverlayInteractionPolicy.panelStyleMask,
             backing: .buffered,
             defer: false
@@ -198,8 +196,8 @@ final class OverlayManager {
         guard let screen = NSScreen.main else { return }
 
         let visibleFrame = screen.visibleFrame
-        let x = visibleFrame.maxX - size.width - screenMargin
-        let y = visibleFrame.minY + screenMargin
+        let x = visibleFrame.maxX - size.width - OverlayMetrics.screenMargin
+        let y = visibleFrame.minY + OverlayMetrics.screenMargin
 
         panel.setFrame(
             NSRect(x: x, y: y, width: size.width, height: size.height),

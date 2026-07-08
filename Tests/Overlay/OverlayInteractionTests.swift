@@ -102,6 +102,29 @@ enum OverlayInteractionTests: TestCase {
         try assertFalse(spacePressed2)
         try assertFalse(cPressed2)
 
+        var shiftedCPressed = false
+        panel.onCPressed = {
+            shiftedCPressed = true
+            return true
+        }
+
+        if let shiftedCEvent = NSEvent.keyEvent(
+            with: .keyDown,
+            location: .zero,
+            modifierFlags: [.shift],
+            timestamp: 0,
+            windowNumber: panel.windowNumber,
+            context: nil,
+            characters: "C",
+            charactersIgnoringModifiers: "c",
+            isARepeat: false,
+            keyCode: 8
+        ) {
+            panel.sendEvent(shiftedCEvent)
+        }
+
+        try assertFalse(shiftedCPressed)
+
         try assertEqual(
             OverlayKeyboardShortcut.action(forKeyCode: 8, flags: [], isRepeat: false),
             .copy

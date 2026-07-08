@@ -1,26 +1,5 @@
 import SwiftUI
 
-final class OverlayDisplayState: ObservableObject {
-    @Published var text: String
-    @Published var isError: Bool
-    @Published var showsCopiedToast = false
-
-    init(text: String, isError: Bool) {
-        self.text = text
-        self.isError = isError
-    }
-
-    func update(text: String, isError: Bool) {
-        self.text = text
-        self.isError = isError
-        showsCopiedToast = false
-    }
-
-    func showCopiedToast() {
-        showsCopiedToast = true
-    }
-}
-
 /// The SwiftUI view displayed inside the floating overlay panel.
 struct OverlayView: View {
     @ObservedObject private var displayState: OverlayDisplayState
@@ -68,7 +47,7 @@ struct OverlayView: View {
     private var cardContent: some View {
         contentView
             .padding(16)
-            .frame(width: 480, alignment: .leading)
+            .frame(width: OverlayMetrics.panelWidth, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -86,7 +65,11 @@ struct OverlayView: View {
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .frame(width: 480, height: 34, alignment: .trailing)
+        .frame(
+            width: OverlayMetrics.panelWidth,
+            height: OverlayMetrics.toastHeight,
+            alignment: .trailing
+        )
     }
 
     @ViewBuilder
@@ -103,7 +86,7 @@ struct OverlayView: View {
                 ResponseMarkdownView(content: displayState.text)
             }
         }
-        .frame(maxHeight: 300)
+        .frame(maxHeight: OverlayMetrics.maxContentHeight)
     }
 }
 
