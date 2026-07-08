@@ -11,16 +11,12 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run ProviderCatalogTests
-        run: swift run -c release ClipAITests ProviderCatalogTests
+        run: ./Scripts/test.sh ProviderCatalogTests
 
   test-provider-registry:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run ProviderRegistryTests
-        run: swift run -c release ClipAITests ProviderRegistryTests
+        run: ./Scripts/test.sh ProviderRegistryTests

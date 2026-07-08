@@ -1,14 +1,15 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 echo "Building ClipAI (release)..."
 cd "$PROJECT_DIR"
-swift build -c release 2>&1
+swift build -c release
 
-BIN_PATH="$(swift build -c release --show-bin-path)/clip"
+BIN_DIR="$(swift build -c release --show-bin-path)"
+BIN_PATH="$BIN_DIR/clip"
 
 echo ""
 echo "✓ Build successful!"

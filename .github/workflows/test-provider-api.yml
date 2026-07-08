@@ -11,25 +11,26 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run AnthropicAPITests
-        run: swift run -c release ClipAITests AnthropicAPITests
+        run: ./Scripts/test.sh AnthropicAPITests
 
   test-openai-api:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run OpenAICompatibleAPITests
-        run: swift run -c release ClipAITests OpenAICompatibleAPITests
+        run: ./Scripts/test.sh OpenAICompatibleAPITests
 
   test-gemini-api:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run GeminiAPITests
-        run: swift run -c release ClipAITests GeminiAPITests
+        run: ./Scripts/test.sh GeminiAPITests
+
+  test-provider-http:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ProviderHTTPTests
+        run: ./Scripts/test.sh ProviderHTTPTests

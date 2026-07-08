@@ -11,16 +11,12 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run OverlayInteractionTests
-        run: swift run -c release ClipAITests OverlayInteractionTests
+        run: ./Scripts/test.sh OverlayInteractionTests
 
   test-markdown-rendering:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run MarkdownRenderingTests
-        run: swift run -c release ClipAITests MarkdownRenderingTests
+        run: ./Scripts/test.sh MarkdownRenderingTests

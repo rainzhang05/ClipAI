@@ -11,25 +11,26 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run ModelCapabilityParserTests
-        run: swift run -c release ClipAITests ModelCapabilityParserTests
+        run: ./Scripts/test.sh ModelCapabilityParserTests
+
+  test-model-capability-fetcher:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ModelCapabilityFetcherTests
+        run: ./Scripts/test.sh ModelCapabilityFetcherTests
 
   test-model-options-prompt:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run ModelOptionsPromptTests
-        run: swift run -c release ClipAITests ModelOptionsPromptTests
+        run: ./Scripts/test.sh ModelOptionsPromptTests
 
   test-request-options-api:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -c release
       - name: Run RequestOptionsAPITests
-        run: swift run -c release ClipAITests RequestOptionsAPITests
+        run: ./Scripts/test.sh RequestOptionsAPITests
