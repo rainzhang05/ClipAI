@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Manages the floating overlay panel that displays AI responses.
+/// Non-activating panel with focused-keyboard fallback controls.
 final class OverlayPanel: NSPanel {
     var onSpacePressed: (() -> Bool)?
     var onCPressed: (() -> Bool)?
@@ -13,9 +13,9 @@ final class OverlayPanel: NSPanel {
     override func sendEvent(_ event: NSEvent) {
         if event.type == .keyDown,
            let action = OverlayKeyboardShortcut.action(
-            forKeyCode: Int64(event.keyCode),
-            flags: CGEventFlags(rawValue: UInt64(event.modifierFlags.rawValue)),
-            isRepeat: event.isARepeat
+               forKeyCode: Int64(event.keyCode),
+               flags: CGEventFlags(rawValue: UInt64(event.modifierFlags.rawValue)),
+               isRepeat: event.isARepeat
            ),
            handle(action) {
             return

@@ -59,7 +59,7 @@ public final class GeminiProvider: AIProvider {
             parseResponse: GeminiAPI.parseResponse,
             parseError: GeminiAPI.parseError
         )
-        
+
         history = currentMessages + [
             [
                 "role": "model",
